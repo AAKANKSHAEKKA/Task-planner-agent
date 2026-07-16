@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+backend/tasks.db
+backend/chroma_memory/
+.DS_Store
+node_modules/

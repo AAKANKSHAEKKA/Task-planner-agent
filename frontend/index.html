@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TaskMind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF1EC;
+    --surface: #FFFFFF;
+    --ink: #1E2A2F;
+    --ink-soft: #55636A;
+    --line: #D8DED8;
+    --pine: #2F6F5E;
+    --pine-soft: #E4EEE9;
+    --plum: #6B5B95;
+    --plum-soft: #ECE8F3;
+    --ochre: #B98A2E;
+    --slate: #7C8B93;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pine);
+  }
+
+  header {
+    padding: 32px clamp(20px, 4vw, 48px) 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(24px, 3vw, 32px);
+    margin: 6px 0 4px;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 14px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 110px);
+  }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  section { background: var(--bg); }
+
+  /* ---- chat panel ---- */
+  #chat-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 300px;
+    max-height: 62vh;
+  }
+
+  .msg { max-width: 82%; display: flex; flex-direction: column; gap: 4px; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.agent { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .msg.user .bubble { background: var(--ink); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.agent .bubble { background: var(--pine-soft); color: var(--ink); border-bottom-left-radius: 4px; }
+
+  .msg .stamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
+
+  .thinking { display: flex; gap: 5px; padding: 12px 16px; }
+  .thinking span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--pine); opacity: 0.4;
+    animation: pulse 1.1s infinite ease-in-out;
+  }
+  .thinking span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulse { 0%,80%,100% { opacity: 0.25; transform: scale(0.8);} 40% { opacity: 1; transform: scale(1);} }
+
+  #input-row {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  #input-row textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 44px;
+  }
+  #input-row textarea:focus-visible {
+    outline: 2px solid var(--pine);
+    outline-offset: 1px;
+  }
+
+  #send-btn {
+    background: var(--pine);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #send-btn:hover { background: #275a4c; }
+  #send-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  #send-btn:disabled { background: var(--slate); cursor: not-allowed; }
+
+  /* ---- ledger panel ---- */
+  #ledger-panel { display: flex; flex-direction: column; }
+
+  .ledger-block { background: var(--surface); }
+  .ledger-block + .ledger-block { border-top: 1px solid var(--line); }
+
+  .ledger-header {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .ledger-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .ledger-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  #task-list, #memory-trail {
+    padding: 0 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 32vh;
+    overflow-y: auto;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+
+  .priority-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .priority-high { background: var(--ochre); }
+  .priority-medium { background: var(--pine); }
+  .priority-low { background: var(--slate); }
+
+  .task-text { flex: 1; }
+  .task-title { font-size: 13.5px; }
+  .task-title.done { text-decoration: line-through; color: var(--ink-soft); }
+  .task-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+  }
+
+  .status-select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    padding: 3px 4px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 6px 2px 2px;
+  }
+
+  .memory-chip {
+    padding: 10px 12px;
+    background: var(--plum-soft);
+    border-radius: 10px;
+    border-left: 3px solid var(--plum);
+    animation: settle 0.35s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .memory-chip { animation: none; }
+  }
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(-6px) rotate(-0.5deg); }
+    to { opacity: 1; transform: translateY(0) rotate(0); }
+  }
+  .memory-chip .chip-kind {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--plum);
+    margin-bottom: 3px;
+  }
+  .memory-chip .chip-text { font-size: 13px; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">TaskMind</div>
+  <h1>Your task planner. It remembers.</h1>
+  <p>Tell it a goal — it plans the tasks, tracks your progress, and recalls your preferences next time, without you repeating yourself.</p>
+</header>
+
+<main>
+  <section id="chat-panel">
+    <div id="messages"></div>
+    <div id="input-row">
+      <textarea id="input" placeholder="e.g. I'm starting a final-year ML project, due in 6 weeks…" rows="1"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </section>
+
+  <section id="ledger-panel">
+    <div class="ledger-block">
+      <div class="ledger-header">
+        <h2>Tasks</h2>
+        <span class="ledger-count" id="task-count">0</span>
+      </div>
+      <div id="task-list"></div>
+    </div>
+    <div class="ledger-block">
+      <div class="ledger-header">
+        <h2>Memory trail</h2>
+        <span class="ledger-count" id="memory-count">0</span>
+      </div>
+      <div id="memory-trail">
+        <div class="empty-state">Nothing remembered yet — mention a goal, deadline, or preference and it'll show up here.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Change this if the backend runs somewhere other than localhost:8000
+  const API_BASE = "http://localhost:8000";
+
+  const messagesEl = document.getElementById("messages");
+  const inputEl = document.getElementById("input");
+  const sendBtn = document.getElementById("send-btn");
+  const taskListEl = document.getElementById("task-list");
+  const taskCountEl = document.getElementById("task-count");
+  const memoryTrailEl = document.getElementById("memory-trail");
+  const memoryCountEl = document.getElementById("memory-count");
+
+  let threadId = localStorage.getItem("tm_thread_id");
+  let memoryEventCount = 0;
+
+  function stamp() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function addMessage(text, who) {
+    const wrap = document.createElement("div");
+    wrap.className = `msg ${who}`;
+    wrap.innerHTML = `<div class="bubble"></div><div class="stamp">${stamp()}</div>`;
+    wrap.querySelector(".bubble").textContent = text;
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return wrap;
+  }
+
+  function showThinking() {
+    const wrap = document.createElement("div");
+    wrap.className = "msg agent";
+    wrap.id = "thinking-indicator";
+    wrap.innerHTML = `<div class="bubble thinking"><span></span><span></span><span></span></div>`;
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function removeThinking() {
+    document.getElementById("thinking-indicator")?.remove();
+  }
+
+  function renderTasks(tasks) {
+    taskCountEl.textContent = tasks.length;
+    taskListEl.innerHTML = "";
+    if (tasks.length === 0) {
+      taskListEl.innerHTML = `<div class="empty-state">No tasks yet — describe a goal in the chat and they'll appear here.</div>`;
+      return;
+    }
+    for (const t of tasks) {
+      const item = document.createElement("div");
+      item.className = "task-item";
+      item.innerHTML = `
+        <div class="priority-dot priority-${t.priority}"></div>
+        <div class="task-text">
+          <div class="task-title ${t.status === 'done' ? 'done' : ''}">${escapeHtml(t.title)}</div>
+          <div class="task-meta">${t.id} · ${t.due_date || 'no due date'}</div>
+        </div>
+        <select class="status-select" data-id="${t.id}">
+          <option value="pending" ${t.status === 'pending' ? 'selected' : ''}>pending</option>
+          <option value="in-progress" ${t.status === 'in-progress' ? 'selected' : ''}>in-progress</option>
+          <option value="done" ${t.status === 'done' ? 'selected' : ''}>done</option>
+        </select>
+      `;
+      taskListEl.appendChild(item);
+    }
+    taskListEl.querySelectorAll(".status-select").forEach((sel) => {
+      sel.addEventListener("change", (e) => updateTaskStatus(e.target.dataset.id, e.target.value));
+    });
+  }
+
+  function renderMemoryEvents(events) {
+    if (!events || events.length === 0) return;
+    const empty = memoryTrailEl.querySelector(".empty-state");
+    if (empty) empty.remove();
+
+    for (const ev of events) {
+      if (ev.type === "create_task") continue; // already visible in Tasks panel
+      const chip = document.createElement("div");
+      chip.className = "memory-chip";
+      const label = ev.type === "save_memory" ? "remembered" : "recalled";
+      const text = ev.type === "save_memory"
+        ? (ev.input.text || "")
+        : (ev.output || "no matches");
+      chip.innerHTML = `<div class="chip-kind">${label}</div><div class="chip-text"></div>`;
+      chip.querySelector(".chip-text").textContent = text;
+      memoryTrailEl.appendChild(chip);
+      memoryEventCount++;
+    }
+    memoryCountEl.textContent = memoryEventCount;
+    memoryTrailEl.scrollTop = memoryTrailEl.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function ensureThread() {
+    if (threadId) return;
+    const res = await fetch(`${API_BASE}/api/new_thread`);
+    const data = await res.json();
+    threadId = data.thread_id;
+    localStorage.setItem("tm_thread_id", threadId);
+  }
+
+  async function loadTasks() {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks`);
+      renderTasks(await res.json());
+    } catch (e) {
+      taskListEl.innerHTML = `<div class="empty-state">Can't reach the backend. Is it running on ${API_BASE}?</div>`;
+    }
+  }
+
+  async function updateTaskStatus(taskId, status) {
+    await fetch(`${API_BASE}/api/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    loadTasks();
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    await ensureThread();
+
+    addMessage(text, "user");
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    sendBtn.disabled = true;
+    showThinking();
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thread_id: threadId, message: text }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      removeThinking();
+      addMessage(data.response, "agent");
+      renderTasks(data.tasks);
+      renderMemoryEvents(data.memory_events);
+    } catch (e) {
+      removeThinking();
+      addMessage("Couldn't reach the backend. Make sure server.py is running.", "agent");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+  });
+
+  loadTasks();
+</script>
+
+</body>
+</html>
